@@ -49,7 +49,7 @@ public class ParserService {
      * @return Путь до загруженного файла с расписанием
      * @throws IOException Для загрузки файла
      */
-    public static String fetch() throws IOException {
+    public String fetch() throws IOException {
         BufferedInputStream in = new BufferedInputStream(new URL(
                 "https://webservices.mirea.ru/upload/iblock/4b3/x949o5g2lanyzdn1n07krvd0c2ni4mho/III_1-kurs_22_23_vesna_10.04.2023.xlsx"
         ).openStream());
@@ -69,7 +69,7 @@ public class ParserService {
      * @param sheet Лист с расписанием
      * @return номер строки, содержащей названия групп
      */
-    private static int findGroupNameRow(XSSFSheet sheet) {
+    private int findGroupNameRow(XSSFSheet sheet) {
 
         int rowNumber = 1;
         Iterator<Row> rowIter = sheet.rowIterator();
@@ -97,7 +97,7 @@ public class ParserService {
         return rowNumber;
     }
 
-    private static void getLessonLocation() {
+    private void getLessonLocation() {
 
     }
 
@@ -107,7 +107,7 @@ public class ParserService {
      * @param lessonString строка с названием пары (может включать информацию о неделях проведения)
      * @param lesson       объект типа Lesson
      */
-    private static void getLessonWeeks(String lessonString, Lesson lesson) {
+    private void getLessonWeeks(String lessonString, Lesson lesson) {
         if (lessonString.contains("н.")) {
             String weekInfo = lessonString.split("н\\.")[0];
             weekInfo = weekInfo.replace(" ", "");
@@ -147,7 +147,7 @@ public class ParserService {
      * @param groupCol     номер столбца группы
      * @return список пар конкретной группы
      */
-    private static ArrayList<Lesson> getGroupLessons(XSSFSheet sheet, int groupNameRow, int groupCol) {
+    private ArrayList<Lesson> getGroupLessons(XSSFSheet sheet, int groupNameRow, int groupCol) {
         String groupName = sheet.getRow(groupNameRow).getCell(groupCol).getStringCellValue();
 
         int scheduleStartRow = groupNameRow + 2;
@@ -176,7 +176,7 @@ public class ParserService {
         return lessons;
     }
 
-    private static void test() throws IOException {
+    private void test() throws IOException {
         String file = fetch();
         FileInputStream fs = new FileInputStream(file);
         XSSFWorkbook wb = new XSSFWorkbook(fs);
