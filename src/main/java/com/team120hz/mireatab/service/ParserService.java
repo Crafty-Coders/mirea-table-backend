@@ -1,30 +1,53 @@
 package com.team120hz.mireatab.service;
 
+import com.team120hz.mireatab.model.Group;
 import com.team120hz.mireatab.model.Lesson;
 import com.team120hz.mireatab.tools.Campus;
 import com.team120hz.mireatab.tools.LessonType;
-import org.springframework.stereotype.Service;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
 public class ParserService {
 
-    private static final HashMap<String, Campus> campuses = new HashMap<String, Campus>() {
+    private final GroupService groupService;
+    private final LessonService lessonService;
+
+    @Autowired
+    public ParserService(GroupService groupService, LessonService lessonService) {
+        this.groupService = groupService;
+        this.lessonService = lessonService;
+    }
+
+    /**
+     * Форматирует строку с названием группы
+     *
+     * @param unformatted неформатированная строка
+     * @return форматированная строка
+     */
+    private String formatGroupName(String unformatted) {
+        return unformatted
+                .replaceAll("\\s{2,}", " ")
+                .replaceAll("\\s*-\\s*", "-")
+                .split(" ")[0];
+    }
+
+    private final HashMap<String, Campus> campuses = new HashMap<>() {
         {
             put("В-78", Campus.V_78);
             put("В-86", Campus.V_86);
@@ -34,7 +57,7 @@ public class ParserService {
         }
     };
 
-    private static final HashMap<String, LessonType> lessonTypes = new HashMap<String, LessonType>() {
+    private final HashMap<String, LessonType> lessonTypes = new HashMap<>() {
         {
             put("ЛК", LessonType.Lecture);
             put("ПР", LessonType.Seminar);
@@ -49,18 +72,17 @@ public class ParserService {
      * @return Путь до загруженного файла с расписанием
      * @throws IOException Для загрузки файла
      */
-    public String fetch() throws IOException {
-        BufferedInputStream in = new BufferedInputStream(new URL(
-                "https://webservices.mirea.ru/upload/iblock/4b3/x949o5g2lanyzdn1n07krvd0c2ni4mho/III_1-kurs_22_23_vesna_10.04.2023.xlsx"
-        ).openStream());
-        FileOutputStream fileOutputStream = new FileOutputStream("test.xlsx");
+    public String downloadFileFromUrl(String url, int number) throws IOException {
+        BufferedInputStream in = new BufferedInputStream(new URL(url).openStream());
+        String name = "./data/" + number + ".xlsx";
+        FileOutputStream fileOutputStream = new FileOutputStream(name);
         byte[] dataBuffer = new byte[1024];
         int bytesRead;
         while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
             fileOutputStream.write(dataBuffer, 0, bytesRead);
         }
 
-        return "./test.xlsx";
+        return name;
     }
 
     /**
@@ -87,8 +109,11 @@ public class ParserService {
                 Cell cell = cellIter.next();
 
                 Pattern pattern = Pattern.compile("([А-Яа-я]{4}-[0-9]{2}-[0-9]{2})");
-                if (pattern.matcher(cell.getStringCellValue()).find()) {
-                    return counter;
+                try {
+                    if (pattern.matcher(cell.getStringCellValue()).find()) {
+                        return counter;
+                    }
+                } catch (IllegalStateException ignored) {
                 }
             }
             counter++;
@@ -97,8 +122,26 @@ public class ParserService {
         return rowNumber;
     }
 
-    private void getLessonLocation() {
+    /**
+     * Получение информации о о аудитории и кампусе проведения пары
+     *
+     * @param locationString строка с данными о аудитории и кампусе проведения
+     * @param lesson         объект типа Lesson
+     */
+    private void getLessonLocation(String locationString, Lesson lesson) {
+        String[] split = locationString.split("\\(");
+        String auditory = split[0];
+        if (split.length == 1) {
+            lesson.auditory = locationString;
+            return;
+        }
+        String campus = split[1].replace(")", "");
+        lesson.campus = campuses.get(campus);
+        lesson.auditory = auditory.substring(0, auditory.length() - 1);
+    }
 
+    private void getLessonTeachers(String teachersString, Lesson lesson) {
+        lesson.teachers.addAll(Arrays.asList(teachersString.split("\n")));
     }
 
     /**
@@ -111,9 +154,12 @@ public class ParserService {
         if (lessonString.contains("н.")) {
             String weekInfo = lessonString.split("н\\.")[0];
             weekInfo = weekInfo.replace(" ", "");
-            boolean excluded = weekInfo.contains("кр.");
+            boolean excluded = weekInfo.contains("кр");
             if (excluded) {
-                weekInfo = weekInfo.replace("кр.", "");
+                weekInfo = weekInfo
+                        .replace("кр.", "")
+                        .replace("кр", "");
+
             }
             String[] weeks = weekInfo.split(",");
             for (String weekNumber : weeks) {
@@ -140,57 +186,152 @@ public class ParserService {
     }
 
     /**
-     * Получает список пар конкретной группы
+     * Получает пары конкретной группы и добавляет их в базу данных
      *
      * @param sheet        лист с расписанием
      * @param groupNameRow номер строки с названиями групп
      * @param groupCol     номер столбца группы
-     * @return список пар конкретной группы
      */
-    private ArrayList<Lesson> getGroupLessons(XSSFSheet sheet, int groupNameRow, int groupCol) {
-        String groupName = sheet.getRow(groupNameRow).getCell(groupCol).getStringCellValue();
+    private void getGroupLessons(XSSFSheet sheet, int groupNameRow, int groupCol) {
+        String groupName = formatGroupName(
+                sheet.getRow(groupNameRow)
+                        .getCell(groupCol)
+                        .getStringCellValue()
+        );
+        Group group = new Group();
+        group.name = groupName;
+
+        List<Group> groups = groupService.findAllByName(groupName);
+
+        if (groups.size() == 0) {
+            group = groupService.save(group);
+        } else {
+            group = groups.get(0);
+        }
 
         int scheduleStartRow = groupNameRow + 2;
-        ArrayList<Lesson> lessons = new ArrayList<>();
+
         for (int dayNumber = 0; dayNumber < 6; dayNumber++) {
             for (int pairNumber = 0; pairNumber < 7; pairNumber++) {
                 for (int week = 0; week < 2; week++) {
+                    int lessonRow = scheduleStartRow + dayNumber * 14 + pairNumber * 2 + week;
 
-                    String lessonName = sheet
-                            .getRow(scheduleStartRow + dayNumber * 14 + pairNumber * 2 + week)
-                            .getCell(groupCol).getStringCellValue().split("\n")[0];
+                    XSSFCell lessonCell = sheet
+                            .getRow(lessonRow)
+                            .getCell(groupCol);
+
+                    if (lessonCell == null) {
+                        continue;
+                    }
+
+                    String lessonName = lessonCell
+                            .getStringCellValue()
+                            .split("\n")[0];
+
+                    if (Objects.equals(lessonName, "")) {
+                        continue;
+                    }
+
                     Lesson lesson = new Lesson();
                     lesson.day = dayNumber + 1;
                     lesson.number = pairNumber + 1;
                     lesson.name = lessonName.contains("н.") ?
-                            (lessonName.split("н\\.")[1]).substring(1) : lessonName;
+                            (lessonName.split("н\\.")[1]).substring(1)
+                            : lessonName;
                     lesson.evenWeek = week != 0;
-                    if (Objects.equals(lessonName, "")) {
-                        continue;
-                    }
+                    lesson.type = lessonTypes.get(sheet
+                            .getRow(lessonRow)
+                            .getCell(groupCol + 1)
+                            .getStringCellValue());
+
+                    XSSFCell locationCell = sheet
+                            .getRow(lessonRow)
+                            .getCell(groupCol + 3);
+
+                    String locationString = locationCell.getCellType() == CellType.NUMERIC
+                            ? Double.toString(locationCell.getNumericCellValue())
+                            : locationCell.getStringCellValue();
+
+                    String teachersString = sheet
+                            .getRow(lessonRow)
+                            .getCell(groupCol + 2)
+                            .getStringCellValue();
                     getLessonWeeks(lessonName, lesson);
-                    lessons.add(lesson);
+                    getLessonLocation(locationString, lesson);
+                    getLessonTeachers(teachersString, lesson);
+
+                    lesson.group = group;
+
+                    lessonService.save(lesson); // add to DB
                 }
             }
         }
-        return lessons;
     }
 
-    private void test() throws IOException {
-        String file = fetch();
+    /**
+     * Получает расписание из файла
+     *
+     * @param file файл, который нужно распарсить
+     * @throws IOException
+     */
+    private void parseFile(String file) throws IOException {
         FileInputStream fs = new FileInputStream(file);
         XSSFWorkbook wb = new XSSFWorkbook(fs);
         XSSFSheet ws = wb.getSheetAt(0);
         int groupNameRowNumber = findGroupNameRow(ws);
 
-        for (Lesson lesson : getGroupLessons(ws, groupNameRowNumber, 5)) {
-            System.out.println();
-            System.out.print(lesson.name + " ");
-            System.out.print(lesson.day + " ");
-            System.out.print(lesson.number + " ");
-            System.out.print(lesson.excludedWeeks + " ");
-            System.out.print(lesson.includedWeeks + " ");
-            System.out.print(lesson.evenWeek + " ");
+        boolean big = false;
+        int i = 5;
+
+        XSSFCell cell = ws.getRow(groupNameRowNumber).getCell(i);
+        while (cell != null && !Objects.equals(cell.getStringCellValue(), "")) {
+            getGroupLessons(ws, groupNameRowNumber, i);
+            i += big ? 10 : 5;
+            big = !big;
+            cell = ws.getRow(groupNameRowNumber).getCell(i);
         }
+    }
+
+    private void downloadScheduleToDatabase(ArrayList<String> urls) throws IOException {
+
+        for (int i = 0; i < urls.size(); i++) {
+            String file = downloadFileFromUrl(urls.get(i), i);
+            parseFile(file);
+            (new File(file)).delete();
+        }
+    }
+
+    /**
+     * Получает массив ссылок на файлы со страницы с расписанием
+     *
+     * @return массив ссылок на файлы с расписанием
+     * @throws IOException
+     */
+    private ArrayList<String> getUrls() throws IOException {
+        String scheduleUrl = "https://www.mirea.ru/schedule/";
+        Document document = Jsoup
+                .connect(scheduleUrl)
+                .userAgent("Mozilla")
+                .get();
+
+        Elements a = document.select("a");
+        ArrayList<String> urls = new ArrayList<>();
+
+        a.forEach(el -> {
+            if (el.attr("href").contains("xlsx")
+                    && !el.attr("href").contains("ekz")
+                    && !el.attr("href").contains("sessiya")
+            ) {
+                urls.add(el.attr("href"));
+            }
+        });
+
+        return urls;
+
+    }
+
+    public void parse() throws IOException {
+        ArrayList<String> urls = getUrls();
+        downloadScheduleToDatabase(urls);
     }
 }

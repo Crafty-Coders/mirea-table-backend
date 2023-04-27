@@ -2,6 +2,7 @@ package com.team120hz.mireatab.model;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -16,5 +17,9 @@ public class Group {
 
     @OneToMany
     @Column(name = "lessons")
-    public Set<Lesson> lessons;
+    public Set<Lesson> lessons = new HashSet<>();
+
+    public Group() {
+
+    }
 }
