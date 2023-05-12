@@ -5,7 +5,6 @@ import com.team120hz.mireatab.model.Lesson;
 import com.team120hz.mireatab.tools.Campus;
 import com.team120hz.mireatab.tools.LessonType;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -19,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -74,6 +75,7 @@ public class ParserService {
      */
     public String downloadFileFromUrl(String url, int number) throws IOException {
         BufferedInputStream in = new BufferedInputStream(new URL(url).openStream());
+        Files.createDirectories(Paths.get("./data"));
         String name = "./data/" + number + ".xlsx";
         FileOutputStream fileOutputStream = new FileOutputStream(name);
         byte[] dataBuffer = new byte[1024];
@@ -129,7 +131,7 @@ public class ParserService {
      * @param lesson         объект типа Lesson
      */
     private void getLessonLocation(String locationString, Lesson lesson) {
-        String[] split = locationString.split("\\(");
+        String[] split = locationString.split("\n")[0].split("\\(");
         String auditory = split[0];
         if (split.length == 1) {
             lesson.auditory = locationString;
@@ -242,13 +244,13 @@ public class ParserService {
                     lesson.type = lessonTypes.get(sheet
                             .getRow(lessonRow)
                             .getCell(groupCol + 1)
-                            .getStringCellValue());
+                            .getStringCellValue().split("\n")[0]);
 
                     XSSFCell locationCell = sheet
                             .getRow(lessonRow)
                             .getCell(groupCol + 3);
 
-                    String locationString = locationCell.getCellType() == CellType.NUMERIC
+                    String locationString = locationCell.getCellType() == Cell.CELL_TYPE_NUMERIC
                             ? Double.toString(locationCell.getNumericCellValue())
                             : locationCell.getStringCellValue();
 

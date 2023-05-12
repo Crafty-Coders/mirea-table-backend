@@ -1,23 +1,25 @@
 package com.team120hz.mireatab.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "group")
+@Table(name = "study_group")
 public class Group {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
     private Long id;
 
     @Column(name = "name")
     public String name;
 
-    @OneToMany
-    @Column(name = "lessons")
-    public Set<Lesson> lessons = new HashSet<>();
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    public Set<Lesson> lessons;
 
     public Group() {
 
