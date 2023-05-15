@@ -1,6 +1,6 @@
-package com.craftyCoders.mireatab.repository;
+package com.craftycoders.mireatab.repository;
 
-import com.craftyCoders.mireatab.model.Group;
+import com.craftycoders.mireatab.model.Group;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

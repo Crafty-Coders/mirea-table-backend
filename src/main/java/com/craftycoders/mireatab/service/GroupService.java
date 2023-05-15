@@ -1,7 +1,7 @@
-package com.craftyCoders.mireatab.service;
+package com.craftycoders.mireatab.service;
 
-import com.craftyCoders.mireatab.model.Group;
-import com.craftyCoders.mireatab.repository.GroupRepository;
+import com.craftycoders.mireatab.repository.GroupRepository;
+import com.craftycoders.mireatab.model.Group;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

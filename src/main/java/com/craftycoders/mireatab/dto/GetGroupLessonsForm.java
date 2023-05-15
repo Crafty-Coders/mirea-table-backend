@@ -1,4 +1,4 @@
-package com.craftyCoders.mireatab.dto;
+package com.craftycoders.mireatab.dto;
 
 import lombok.Getter;
 

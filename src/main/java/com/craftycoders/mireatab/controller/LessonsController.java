@@ -1,9 +1,9 @@
-package com.craftyCoders.mireatab.controller;
+package com.craftycoders.mireatab.controller;
 
-import com.craftyCoders.mireatab.dto.GetGroupLessonsForm;
-import com.craftyCoders.mireatab.model.Group;
-import com.craftyCoders.mireatab.model.Lesson;
-import com.craftyCoders.mireatab.service.GroupService;
+import com.craftycoders.mireatab.dto.GetGroupLessonsForm;
+import com.craftycoders.mireatab.model.Group;
+import com.craftycoders.mireatab.model.Lesson;
+import com.craftycoders.mireatab.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 

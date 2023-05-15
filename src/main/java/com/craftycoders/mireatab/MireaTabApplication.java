@@ -1,4 +1,4 @@
-package com.craftyCoders.mireatab;
+package com.craftycoders.mireatab;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

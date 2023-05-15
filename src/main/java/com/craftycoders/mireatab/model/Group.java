@@ -1,9 +1,7 @@
-package com.craftyCoders.mireatab.model;
+package com.craftycoders.mireatab.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity

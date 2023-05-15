@@ -1,14 +1,12 @@
-package com.craftyCoders.mireatab.model;
+package com.craftycoders.mireatab.model;
 
+import com.craftycoders.mireatab.tools.Campus;
+import com.craftycoders.mireatab.tools.LessonType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.craftyCoders.mireatab.tools.Campus;
-import com.craftyCoders.mireatab.tools.LessonType;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "lesson")
