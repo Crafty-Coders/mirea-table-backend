@@ -1,4 +1,4 @@
-package com.team120hz.mireatab;
+package com.craftyCoders.mireatab;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
