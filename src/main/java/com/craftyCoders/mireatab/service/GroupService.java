@@ -1,7 +1,7 @@
-package com.team120hz.mireatab.service;
+package com.craftyCoders.mireatab.service;
 
-import com.team120hz.mireatab.model.Group;
-import com.team120hz.mireatab.repository.GroupRepository;
+import com.craftyCoders.mireatab.model.Group;
+import com.craftyCoders.mireatab.repository.GroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,5 +22,9 @@ public class GroupService {
 
     public List<Group> findAllByName(String name) {
         return groupRepository.findAllByName(name);
+    }
+
+    public List<Group> findAll() {
+        return (List<Group>) groupRepository.findAll();
     }
 }

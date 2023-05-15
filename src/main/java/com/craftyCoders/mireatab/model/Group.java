@@ -1,4 +1,4 @@
-package com.team120hz.mireatab.model;
+package com.craftyCoders.mireatab.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

@@ -1,9 +1,9 @@
-package com.team120hz.mireatab.controller;
+package com.craftyCoders.mireatab.controller;
 
-import com.team120hz.mireatab.dto.GetGroupLessonsForm;
-import com.team120hz.mireatab.model.Group;
-import com.team120hz.mireatab.model.Lesson;
-import com.team120hz.mireatab.service.GroupService;
+import com.craftyCoders.mireatab.dto.GetGroupLessonsForm;
+import com.craftyCoders.mireatab.model.Group;
+import com.craftyCoders.mireatab.model.Lesson;
+import com.craftyCoders.mireatab.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +25,7 @@ public class LessonsController {
         this.groupService = groupService;
     }
 
-    @GetMapping("/getGroupLessons")
+    @GetMapping("/get-group-lessons")
     public ResponseEntity<?> getGroupLessons(@RequestBody GetGroupLessonsForm body) {
         List<Group> groups = groupService.findAllByName(body.getName());
         if (groups.size() == 0) {
@@ -33,5 +33,11 @@ public class LessonsController {
         }
         Set<Lesson> groupLessons = groups.get(0).lessons;
         return new ResponseEntity<>(groupLessons, HttpStatus.OK);
+    }
+
+    @GetMapping("get-groups")
+    public ResponseEntity<?> getGroups() {
+        List<Group> groups = groupService.findAll();
+        return new ResponseEntity<>(groups, HttpStatus.OK);
     }
 }

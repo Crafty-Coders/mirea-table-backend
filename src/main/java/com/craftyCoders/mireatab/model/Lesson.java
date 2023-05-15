@@ -1,8 +1,8 @@
-package com.team120hz.mireatab.model;
+package com.craftyCoders.mireatab.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.team120hz.mireatab.tools.Campus;
-import com.team120hz.mireatab.tools.LessonType;
+import com.craftyCoders.mireatab.tools.Campus;
+import com.craftyCoders.mireatab.tools.LessonType;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

@@ -1,9 +1,9 @@
-package com.team120hz.mireatab.service;
+package com.craftyCoders.mireatab.service;
 
-import com.team120hz.mireatab.model.Group;
-import com.team120hz.mireatab.model.Lesson;
-import com.team120hz.mireatab.tools.Campus;
-import com.team120hz.mireatab.tools.LessonType;
+import com.craftyCoders.mireatab.model.Group;
+import com.craftyCoders.mireatab.model.Lesson;
+import com.craftyCoders.mireatab.tools.Campus;
+import com.craftyCoders.mireatab.tools.LessonType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
